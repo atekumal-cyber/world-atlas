@@ -1551,15 +1551,16 @@ let filteredCountries = [...allCountries];
 let selectedCountry = null;
 let activeTab = 'overview';
 let activeContinent = 'All';
+let isQuizMode = false; //
 
-// 3. CORE FUNCTIONS
+// 3. CORE DISPLAY FUNCTIONS
 function renderSidebar() {
     const list = document.getElementById("countryList");
     if (!list) return;
 
     list.innerHTML = filteredCountries.map((c) => `
         <div class="country-item ${selectedCountry === c ? 'selected' : ''}" onclick="selectCountry('${c.name}')">
-            <img src="https://flagsapi.com/${c.code}/flat/64.png" alt="Flag" onerror="this.src='https://via.placeholder.com/30'">
+            <img src="https://flagsapi.com/${c.code}/flat/64.png" alt="Flag">
             <div>
                 <strong>${c.name}</strong><br>
                 <small>${c.continent}</small>
@@ -1572,10 +1573,8 @@ function renderSidebar() {
 
 function selectCountry(name) {
     selectedCountry = allCountries.find(c => c.name === name);
-    const card = document.getElementById("profileCard");
-    const empty = document.getElementById("emptyState");
-    if(card) card.style.display = "block";
-    if(empty) empty.style.display = "none";
+    document.getElementById("profileCard").style.display = "block";
+    document.getElementById("emptyState").style.display = "none";
     renderSidebar();
     updateProfile();
 }
@@ -1584,64 +1583,111 @@ function updateProfile() {
     if (!selectedCountry) return;
     const c = selectedCountry;
 
-    const flagImg = document.getElementById("flagImg");
-    if(flagImg) flagImg.src = `https://flagsapi.com/${c.code}/flat/64.png`;
-    
-    document.getElementById("name").innerText = c.name;
-    document.getElementById("capital").innerText = c.capital;
+    // Fill UI text
+    document.getElementById("flagImg").src = `https://flagsapi.com/${c.code}/flat/64.png`;
     document.getElementById("pop").innerText = c.pop;
     document.getElementById("area").innerHTML = c.area;
     document.getElementById("cur").innerText = c.cur;
 
+    // Quiz Mode UI masking
+    if (isQuizMode) {
+        document.getElementById("name").innerText = "?????";
+        document.getElementById("capital").innerText = "?????";
+        document.getElementById("revealBtn").style.display = "block";
+        document.getElementById("quizGuess").value = "";
+        document.getElementById("quizFeedback").innerText = "";
+    } else {
+        document.getElementById("name").innerText = c.name;
+        document.getElementById("capital").innerText = c.capital;
+        document.getElementById("revealBtn").style.display = "none";
+    }
+
+    renderTabContent();
+}
+
+// 4. TAB & SEARCH LOGIC (Includes Landmark Search)
+function renderTabContent() {
+    const c = selectedCountry;
     const content = document.getElementById("tabContent");
+    
     if (activeTab === 'overview') {
         content.innerHTML = `
             <div class="info-item"><span class="info-label">🗣️ Languages</span><span class="info-value">${c.lang}</span></div>
             <div class="info-item"><span class="info-label">🏛️ Government</span><span class="info-value">${c.gov}</span></div>
             <div class="info-item"><span class="info-label">📈 Economy</span><span class="info-value">${c.econ}</span></div>
-            <div class="info-item"><span class="info-label">🏙️ Major Cities</span><span class="info-value">${c.cities.join(", ")}</span></div>
+            <div class="info-item"><span class="info-label">🏙️ Cities</span><span class="info-value">${c.cities.join(", ")}</span></div>
         `;
     } else if (activeTab === 'culture') {
-        content.innerHTML = `<h3>🎨 Cultural Traditions</h3><p>${c.culture}</p>`;
+        content.innerHTML = `<h3>🎨 Traditions</h3><p>${c.culture}</p>`;
     } else if (activeTab === 'landmarks') {
-        content.innerHTML = `<h3>🏔️ Famous Landmarks</h3><ul>${c.marks.map(m => `<li>${m}</li>`).join("")}</ul>`;
+        content.innerHTML = `<h3>🏔️ Landmarks</h3><ul>${c.marks.map(m => `<li>${m}</li>`).join("")}</ul>`;
     } else if (activeTab === 'facts') {
-        content.innerHTML = `<h3>💡 Did You Know?</h3>${c.facts.map(f => `<p>• ${f}</p>`).join("")}`;
+        content.innerHTML = `<h3>💡 Fun Facts</h3>${c.facts.map(f => `<p>• ${f}</p>`).join("")}`;
     }
 }
 
-// 4. NAVIGATION & FILTERS
-window.showTab = function(tab, btn) {
-    activeTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    updateProfile();
-};
-
+// Landmark Search Logic
 window.searchAndFilter = function() {
     const term = document.getElementById("searchInput").value.toLowerCase();
-    filteredCountries = allCountries.filter(c => 
-        (c.name.toLowerCase().includes(term) || c.capital.toLowerCase().includes(term)) &&
-        (activeContinent === 'All' || c.continent === activeContinent)
-    );
+    filteredCountries = allCountries.filter(c => {
+        const matchName = c.name.toLowerCase().includes(term);
+        const matchCap = c.capital.toLowerCase().includes(term);
+        const matchLandmark = c.marks.some(m => m.toLowerCase().includes(term));
+        return (matchName || matchCap || matchLandmark) && (activeContinent === 'All' || c.continent === activeContinent);
+    });
     renderSidebar();
 };
 
-window.filterByContinent = function(cont, btn) {
+// 5. GAME & INTERACTION LOGIC
+window.toggleQuizMode = function() {
+    isQuizMode = !isQuizMode;
+    const btn = document.getElementById("quizBtn");
+    const container = document.getElementById("quizInputContainer");
+    
+    btn.innerText = isQuizMode ? "🎓 Quiz Mode: ON" : "🎓 Quiz Mode: OFF";
+    btn.style.background = isQuizMode ? "#ff7675" : ""; // Change color when ON
+    container.style.display = isQuizMode ? "block" : "none";
+    
+    updateProfile();
+};
+
+window.checkGuess = function(val) {
+    if (val.toLowerCase().trim() === selectedCountry.name.toLowerCase()) {
+        document.getElementById("quizFeedback").innerText = "✅ Correct!";
+        document.getElementById("quizFeedback").style.color = "green";
+        setTimeout(revealAnswer, 800);
+    }
+};
+
+window.revealAnswer = function() {
+    document.getElementById("name").innerText = selectedCountry.name;
+    document.getElementById("capital").innerText = selectedCountry.capital;
+    document.getElementById("revealBtn").style.display = "none";
+};
+
+window.shuffleCountries = function() {
+    const rand = allCountries[Math.floor(Math.random() * allCountries.length)];
+    selectCountry(rand.name);
+};
+
+window.showTab = (tab, btn) => {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTabContent();
+};
+
+window.filterByContinent = (cont, btn) => {
     activeContinent = cont;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     searchAndFilter();
 };
 
-window.speakName = function() {
-    if (!selectedCountry) return;
-    const speech = new SpeechSynthesisUtterance(`${selectedCountry.name}. The capital is ${selectedCountry.capital}`);
-    window.speechSynthesis.speak(speech);
+window.speakName = () => {
+    const s = new SpeechSynthesisUtterance(`${selectedCountry.name}. Capital: ${selectedCountry.capital}`);
+    window.speechSynthesis.speak(s);
 };
 
-// 5. CRITICAL INITIALIZATION
-// This waits until the page is ready to fill the sidebar
-document.addEventListener('DOMContentLoaded', () => {
-    renderSidebar();
-});
+// INITIAL LOAD
+document.addEventListener('DOMContentLoaded', renderSidebar);

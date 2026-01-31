@@ -10,7 +10,7 @@
     <div class="app-container">
         <header class="top-nav">
             <div class="search-bar">
-                <input type="text" id="searchInput" onkeyup="searchAndFilter()" placeholder="🔍 Search countries or capitals...">
+                <input type="text" id="searchInput" onkeyup="searchAndFilter()" placeholder="🔍 Search countries, capitals, or landmarks (e.g. 'Eiffel')...">
             </div>
             <div class="continent-filters">
                 <button class="filter-btn active" onclick="filterByContinent('All', this)">All</button>
@@ -25,19 +25,33 @@
 
         <main class="main-content">
             <aside class="sidebar">
-                <h3 id="sidebarCount">Countries (0)</h3>
-                <div class="country-list" id="countryList"></div>
+                <div class="sidebar-header">
+                    <h3 id="sidebarCount">Countries (0)</h3>
+                </div>
+                <div class="country-list" id="countryList">
+                    </div>
             </aside>
 
             <section class="profile-area">
                 <div class="profile-card" id="profileCard" style="display: none;">
+                    
                     <div class="profile-header">
-                        <img id="flagImg" src="" alt="Flag">
+                        <div class="flag-holder">
+                            <img id="flagImg" src="" alt="Flag">
+                        </div>
                         <div class="header-text">
                             <h1 id="name">Select a Country</h1>
-                            <p>📍 <span id="capital">---</span></p>
+                            
+                            <div id="quizInputContainer" style="display: none; margin-top: 10px;">
+                                <input type="text" id="quizGuess" placeholder="Guess the country name..." onkeyup="checkGuess(this.value)">
+                                <p id="quizFeedback" style="margin: 5px 0; font-size: 14px; font-weight: 600; min-height: 20px;"></p>
+                            </div>
+
+                            <p class="capital-label">📍 <span id="capital">---</span></p>
                         </div>
-                        <button onclick="speakName()" class="audio-btn">🔊</button>
+                        <div class="header-actions">
+                            <button onclick="speakName()" class="audio-btn" title="Hear Pronunciation">🔊</button>
+                        </div>
                     </div>
 
                     <div class="quick-stats-row">
@@ -53,15 +67,27 @@
                         <button class="tab-btn" onclick="showTab('facts', this)">💡 Fun Facts</button>
                     </nav>
 
-                    <div class="tab-content" id="tabContent"></div>
+                    <div class="tab-content" id="tabContent">
+                        </div>
+
+                    <div class="card-footer" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                        <div class="quiz-controls" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <button id="shuffleBtn" class="filter-btn" style="flex: 1; height: 45px;" onclick="shuffleCountries()">🔀 Random Country</button>
+                            <button id="quizBtn" class="filter-btn" style="flex: 1; height: 45px;" onclick="toggleQuizMode()">🎓 Quiz Mode: OFF</button>
+                        </div>
+                        <button id="revealBtn" class="filter-btn" style="width: 100%; height: 45px; background: #3b82f6; color: white; display: none;" onclick="revealAnswer()">🔓 Reveal Answer</button>
+                    </div>
                 </div>
 
-                <div id="emptyState" style="text-align: center; margin-top: 100px; color: #64748b;">
-                    <h2>🌍 Select a country to begin!</h2>
+                <div id="emptyState" class="empty-state" style="text-align: center; margin-top: 100px; color: #64748b;">
+                    <div style="font-size: 50px; margin-bottom: 20px;">🌍</div>
+                    <h2>Ready to explore?</h2>
+                    <p>Select a country from the sidebar to begin your mission.</p>
                 </div>
             </section>
         </main>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
